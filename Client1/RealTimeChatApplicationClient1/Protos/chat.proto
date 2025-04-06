@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option csharp_namespace = "ChatApp.Protos";
+
+package chat;
+
+service Chat {
+  rpc ChatStream (stream ChatMessage) returns (stream ChatMessage);
+}
+
+message ChatMessage {
+/* 
+In order to remove field we can not actually deattach number on that field.
+To carefully do it, we reserve this field along with id.
+string user = 1 <- for example we want to remove this field.
+Correct way to do it is like this
+reserved 1;
+reserved "user";
+not just simply remove it. since somebody maybe uses older version of the proto file. As a server we can not control it.
+*/
+  string user = 1;
+  string message = 2;
+}
