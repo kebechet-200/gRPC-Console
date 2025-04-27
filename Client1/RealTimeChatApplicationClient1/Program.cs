@@ -8,10 +8,9 @@ class Program
     {
         using var channel = GrpcChannel.ForAddress("https://localhost:7265");
         var client = new Chat.ChatClient(channel);
-
+    
         using var chat = client.ChatStream();
-
-        // Start reading messages from the server
+    
         var responseTask = Task.Run(async () =>
         {
             await foreach (var message in chat.ResponseStream.ReadAllAsync())
@@ -19,14 +18,19 @@ class Program
                 Console.WriteLine($"{message.User}: {message.Message}");
             }
         });
-
+    
         // Sending messages
         Console.WriteLine("Enter your name:");
         var user = Console.ReadLine();
-
+    
         Console.WriteLine("You can now start chatting:");
         string? line;
-        while ((line = Console.ReadLine()) != null)
+    
+        // Add stopwatch
+        line = Console.ReadLine();
+    
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        for (var i = 0; i < 30_000; i++)
         {
             await chat.RequestStream.WriteAsync(new ChatMessage
             {
@@ -34,8 +38,23 @@ class Program
                 Message = line
             });
         }
-
+    
+        //while ((line = Console.ReadLine()) != null)
+        //{
+        //    for (var i = 0; i < 10; i++)
+        //    {
+        //        await chat.RequestStream.WriteAsync(new ChatMessage
+        //        {
+        //            User = user,
+        //            Message = line
+        //        });
+        //    }
+        //}
+    
         await chat.RequestStream.CompleteAsync();
         await responseTask;
+    
+        stopwatch.Stop();
+        Console.WriteLine($"Time taken: {stopwatch.ElapsedMilliseconds} ms");
     }
 }
