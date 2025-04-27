@@ -9,34 +9,40 @@ class Program
     {
         using var channel = GrpcChannel.ForAddress("https://localhost:7265");
         var client = new Chat.ChatClient(channel);
-
+    
         using var chat = client.ChatStream();
-
+    
         // Start reading messages from the server
+        // Stopwatch start
+        var stopwatch = Stopwatch.StartNew();
+        int counter = 0;
         var responseTask = Task.Run(async () =>
         {
             await foreach (var message in chat.ResponseStream.ReadAllAsync())
             {
+                counter++;
                 Console.WriteLine($"{message.User}: {message.Message}");
             }
         });
-
-        // Sending messages
+    
         Console.WriteLine("Enter your name:");
         var user = Console.ReadLine();
-
+    
         Console.WriteLine("You can now start chatting:");
         string? line;
-        while ((line = Console.ReadLine()) != null)
+        while (string.IsNullOrWhiteSpace(line = Console.ReadLine()))
         {
             await chat.RequestStream.WriteAsync(new ChatMessage
             {
                 User = user,
-                Message = line
+                Message = line + " " + counter
             });
         }
-
+    
         await chat.RequestStream.CompleteAsync();
         await responseTask;
+    
+        stopwatch.Stop();
+        Console.WriteLine($"Elapsed time: {stopwatch.ElapsedMilliseconds} ms");
     }
 }
